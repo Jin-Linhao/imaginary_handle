@@ -15,9 +15,10 @@ class Hand_Detection:
 
 	def __init__(self):
 
-		self.bridge = CvBridge()
-		self.lower_bond = np.array([0, 20, 50], dtype = "uint8")
-		self.upper_bond = np.array([20, 255, 255], dtype = "uint8")
+		# self.bridge = CvBridge()
+		self.lower_bond = np.array([0, 20, 50])
+		self.upper_bond = np.array([20, 255, 255])
+		self.max_area = 0
 
 
 
@@ -27,7 +28,7 @@ class Hand_Detection:
 		while( cap.isOpened() ) :
 			ret,img = cap.read()
 
-		return (ret,img)
+		return ret,img
 
 
 
@@ -41,15 +42,10 @@ class Hand_Detection:
 		hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 		skinMask = cv2.inRange(hsv_img, self.lower, self.upper)
 	 
-		# apply a series of erosions and dilations to the mask
-		# using an elliptical kernel
-		kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-		
+
+		kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))		
 		skinMask = cv2.dilate(skinMask, kernel, iterations = 2)
-		skinMask = cv2.erode(skinMask, kernel, iterations = 2)
-	 
-		# blur the mask to help remove noise, then apply the
-		# mask to the frame
+		skinMask = cv2.erode(skinMask, kernel, iterations = 2) 
 		skinMask = cv2.GaussianBlur(skinMask, (3, 3), 0)
 		skin = cv2.bitwise_and(img, img, mask = skinMask)
 
@@ -59,21 +55,21 @@ class Hand_Detection:
 		bwskin = cv2.cvtColor(skin, cv2.COLOR_BGR2GRAY)
 		contours, hierarchy = cv2.findContours(bwskin,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
 		drawing = np.zeros(img.shape,np.uint8)
-		max_area=0
+		
 
-		return(contours, hierarchy)
+		return contours, hierarchy
 
 
 
-	def find_contours():
+	def find_contours(self):
 
-		contours, _hierarchy = skin_mask
+		contours, _hierarchy = skin_mask()
 
 		for i in range(len(contours)):
 			cnt=contours[i]
 			area = cv2.contourArea(cnt)
-			if(area>max_area):
-				max_area=area
+			if(area>self.smax_area):
+				self.max_area=area
 				ci=i
 		cnt=contours[ci]
 		hull = cv2.convexHull(cnt)
@@ -107,12 +103,14 @@ class Hand_Detection:
 		# 		   i=0
 		cv2.imshow("thresh",skin)
 		cv2.imshow('output',drawing)
-		cv2.imshow('input',img
+		cv2.imshow('input',img)
+
+# def main():
 
 
 
 
 if __name__ == '__main__':
-
+	test = Hand_Detection()
 	while True:
-		Hand_Detection.find_contours()
+		test.find_contours()
