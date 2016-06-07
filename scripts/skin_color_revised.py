@@ -104,5 +104,5 @@ if __name__ == '__main__':
 		skin = cv2.bitwise_and(img, img, mask = test.skin_mask(img))
 
 		cv2.imshow("thresh",skin)
-		# cv2.imshow('output',drawing)
 		cv2.imshow('input',img)
+		cv2.waitKey(30)
