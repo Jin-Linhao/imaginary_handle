@@ -19,11 +19,12 @@ class Hand_Detection:
 		self.lower_bond = np.array([0, 20, 50])
 		self.upper_bond = np.array([20, 255, 255])
 		self.max_area = 0
+		self.img = ""
 
 
+	def skin_mask(self,  img):
 
-	def skin_mask(self, _, img):
-
+	
 		"""HSV thresholding"""
 
 		hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
@@ -100,7 +101,7 @@ if __name__ == '__main__':
 	cap = cv2.VideoCapture(0)
 	while (cap.isOpened()) :
 		ret,img = cap.read()
-		skin = cv2.bitwise_and(img, img, mask = test.skin_mask(ret,img))
+		skin = cv2.bitwise_and(img, img, mask = test.skin_mask(img))
 
 		cv2.imshow("thresh",skin)
 		# cv2.imshow('output',drawing)
