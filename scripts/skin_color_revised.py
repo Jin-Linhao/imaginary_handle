@@ -22,53 +22,36 @@ class Hand_Detection:
 
 
 
-	def cam_cap(self):
-
-		cap = cv2.VideoCapture(0)
-		while( cap.isOpened() ) :
-			ret,img = cap.read()
-
-		return ret,img
-
-
-
-
-	def skin_mask(self):
+	def skin_mask(self, _, img):
 
 		"""HSV thresholding"""
 
-		ret_, img = cam_cap()
-
 		hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-		skinMask = cv2.inRange(hsv_img, self.lower, self.upper)
+		skinMask = cv2.inRange(hsv_img, self.lower_bond, self.upper_bond)
 	 
 
 		kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))		
 		skinMask = cv2.dilate(skinMask, kernel, iterations = 2)
 		skinMask = cv2.erode(skinMask, kernel, iterations = 2) 
 		skinMask = cv2.GaussianBlur(skinMask, (3, 3), 0)
-		skin = cv2.bitwise_and(img, img, mask = skinMask)
 
 
-		"""black and white thresholding"""
+		return skinMask
+
+
+
+	def find_contours(self, skin):	
+		
 
 		bwskin = cv2.cvtColor(skin, cv2.COLOR_BGR2GRAY)
 		contours, hierarchy = cv2.findContours(bwskin,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
 		drawing = np.zeros(img.shape,np.uint8)
 		
 
-		return contours, hierarchy
-
-
-
-	def find_contours(self):
-
-		contours, _hierarchy = skin_mask()
-
 		for i in range(len(contours)):
 			cnt=contours[i]
 			area = cv2.contourArea(cnt)
-			if(area>self.smax_area):
+			if(area>self.max_area):
 				self.max_area=area
 				ci=i
 		cnt=contours[ci]
@@ -101,9 +84,9 @@ class Hand_Detection:
 		# 				cv2.circle(img,far,5,[0,0,255],-1)
 		# 		   print(i)
 		# 		   i=0
-		cv2.imshow("thresh",skin)
-		cv2.imshow('output',drawing)
-		cv2.imshow('input',img)
+		# cv2.imshow("thresh",skin)
+		# cv2.imshow('output',drawing)
+		# cv2.imshow('input',img)
 
 # def main():
 
@@ -111,6 +94,14 @@ class Hand_Detection:
 
 
 if __name__ == '__main__':
+
 	test = Hand_Detection()
-	while True:
-		test.find_contours()
+
+	cap = cv2.VideoCapture(0)
+	while (cap.isOpened()) :
+		ret,img = cap.read()
+		skin = cv2.bitwise_and(img, img, mask = test.skin_mask(ret,img))
+
+		cv2.imshow("thresh",skin)
+		# cv2.imshow('output',drawing)
+		cv2.imshow('input',img)
