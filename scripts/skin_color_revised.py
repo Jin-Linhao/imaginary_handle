@@ -4,10 +4,7 @@ import sys
 import rospy
 import cv2
 import numpy as np
-from std_msgs.msg import String
-from sensor_msgs.msg import Image
-from matplotlib import pyplot as plt
-import collections
+
 
 
 class Hand_Detection:
@@ -42,7 +39,6 @@ class Hand_Detection:
 		# newbwskin = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 		_, newskinmask  = cv2.threshold(bwskin,150,255,cv2.THRESH_TOZERO_INV)
 		contours, hierarchy = cv2.findContours(newskinmask,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-
 		return contours
 
 
@@ -54,26 +50,31 @@ class Hand_Detection:
 		# drawing = np.zeros(skin.shape,np.uint8)
 		
 		for i in range(len(contours)):
+			print "number of contours are"
 			print len(contours)
 			cnt = contours[i]
 			area = cv2.contourArea(cnt)
+			print area
 
 			if(area > max_area):
 				max_area = area
 				cnt_index = i
+			else:
+				cnt_index = 0
 
 		biggest_cnt = contours[cnt_index]
-		biggest_cnt = cv2.approxPolyDP(cnt,0.01*cv2.arcLength(cnt,True),True)
+		# biggest_cnt = cv2.approxPolyDP(cnt,0.01*cv2.arcLength(cnt,True),True)
 
 		return biggest_cnt
 
 
 
 
-	def draw_biggest_contour(self, biggest_cnt, img):
+	def draw_biggest_contour(self, cnt, img):
 
-		drawing = np.zeros(img.shape,np.uint8)
-		cv2.drawContours(drawing,[biggest_cnt],0,(0,255,0),2)
+		drawing = np.zeros(img.shape)
+		# ctr = np.array(cnt).reshape((-1,1,2)).astype(np.int32)
+		cv2.drawContours(drawing,cnt,-1,(0,255,0),3)
 
 		return drawing
 
@@ -112,21 +113,23 @@ if __name__ == '__main__':
 	test = Hand_Detection() 
 
 	cap = cv2.VideoCapture(0)
-	while (cap.isOpened()) :
-		ret,img = cap.read()
-		skin = cv2.bitwise_and(img, img, mask = test.skin_mask(img))
-		# drawing = test.find_biggest_contour(test.find_contours(skin))
+	# while (cap.isOpened()) :
+	ret,img = cap.read()
+	print "read cam"
+	skin = cv2.bitwise_and(img, img, mask = test.skin_mask(img))
+	# drawing = test.find_biggest_contour(test.find_contours(skin))
+	print "the skin"
+	print skin
+	contours = test.find_contours(skin)
+	print contours
+	# cv2.imshow('cnt', contours)
+	# cv2.waitKey(2)
+	biggest_cnt = test.find_biggest_contour(contours)
+	drawing = test.draw_biggest_contour(skin, biggest_cnt)
+	
+	cv2.imshow("thresh",skin)
+	cv2.imshow('output',drawing)
+	cv2.imshow('input',img)
 
-		contours = test.find_contours(skin)
-		print contours
-		# cv2.imshow('cnt', contours)
-		# cv2.waitKey(2)
-		biggest_cnt = test.find_biggest_contour(contours)
-		drawing = test.draw_biggest_contour(skin, biggest_cnt)
-		
-		cv2.imshow("thresh",skin)
-		cv2.imshow('output',drawing)
-		cv2.imshow('input',img)
 
-
-		cv2.waitKey(300)
+	cv2.waitKey(3000)
