@@ -20,10 +20,8 @@ upper = np.array([15, 255, 255], dtype = "uint8")
 
 
 cap = cv2.VideoCapture(0)
-if cap.isOpened() == 0 :
+while (cap.isOpened()) :
     ret,img = cap.read()
-else:
-	print "failed to initialize camera"
     # gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
     # blur = cv2.GaussianBlur(gray,(5,5),0)
     # ret,thresh1 = cv2.threshold(blur,180,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
@@ -53,7 +51,7 @@ else:
     bwskin = cv2.cvtColor(skin, cv2.COLOR_BGR2GRAY)
     newbwskin = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, newskinmask  = cv2.threshold(bwskin,150,255,cv2.THRESH_TOZERO_INV)
-    contours, hierarchy = cv2.findContours(bwskin,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    contours, hierarchy = cv2.findContours(newskinmask,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     drawing = np.zeros(img.shape,np.uint8)
 
 
@@ -104,6 +102,4 @@ else:
     cv2.imshow('output',drawing)
     cv2.imshow('input',img)
                 
-    k = cv2.waitKey(10)
-    if k == 27:
-        break
+    cv2.waitKey(10)

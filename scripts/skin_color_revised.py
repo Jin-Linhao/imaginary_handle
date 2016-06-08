@@ -18,7 +18,7 @@ class Hand_Detection:
 		# self.bridge = CvBridge()
 		self.lower_bond = np.array([0, 20, 50])
 		self.upper_bond = np.array([20, 255, 255])
-		self.max_area = 0
+		# self.max_area = 0
 		self.img = ""
 
 
@@ -42,18 +42,28 @@ class Hand_Detection:
 
 
 	def find_contours(self, skin):	
-		
 
 		bwskin = cv2.cvtColor(skin, cv2.COLOR_BGR2GRAY)
-		contours, hierarchy = cv2.findContours(bwskin,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-		drawing = np.zeros(img.shape,np.uint8)
-		
+		# newbwskin = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+		_, newskinmask  = cv2.threshold(bwskin,150,255,cv2.THRESH_TOZERO_INV)
+		contours, hierarchy = cv2.findContours(newskinmask,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
 
+		return contours
+
+
+
+	def find_biggest_contour(self, contours):
+
+		max_area = 0
+		drawing = np.zeros(skin.shape,np.uint8)
+
+		
 		for i in range(len(contours)):
+			print len(contours)
 			cnt=contours[i]
 			area = cv2.contourArea(cnt)
-			if(area>self.max_area):
-				self.max_area=area
+			if(area>max_area):
+				max_area=area
 				ci=i
 		cnt=contours[ci]
 		hull = cv2.convexHull(cnt)
@@ -69,27 +79,9 @@ class Hand_Detection:
 			  
 		cnt = cv2.approxPolyDP(cnt,0.01*cv2.arcLength(cnt,True),True)
 		hull = cv2.convexHull(cnt,returnPoints = False)
-		
-		# if(1):
-		# 		   defects = cv2.convexityDefects(cnt,hull)
-		# 		   mind=0
-		# 		   maxd=0
-		# 		   for i in range(defects.shape[0]):
-		# 				s,e,f,d = defects[i,0]
-		# 				start = tuple(cnt[s][0])
-		# 				end = tuple(cnt[e][0])
-		# 				far = tuple(cnt[f][0])
-		# 				dist = cv2.pointPolygonTest(cnt,centr,True)
-		# 				cv2.line(img,start,end,[0,255,0],2)
-						
-		# 				cv2.circle(img,far,5,[0,0,255],-1)
-		# 		   print(i)
-		# 		   i=0
-		# cv2.imshow("thresh",skin)
-		# cv2.imshow('output',drawing)
-		# cv2.imshow('input',img)
 
-# def main():
+		return drawing
+
 
 
 
@@ -102,7 +94,12 @@ if __name__ == '__main__':
 	while (cap.isOpened()) :
 		ret,img = cap.read()
 		skin = cv2.bitwise_and(img, img, mask = test.skin_mask(img))
-
+		drawing = test.find_biggest_contour(test.find_contours(skin))
+		
 		cv2.imshow("thresh",skin)
+		cv2.imshow('output',drawing)
 		cv2.imshow('input',img)
-		cv2.waitKey(30)
+		# cv2.imshow("images", np.hstack([skin, drawing, img]))
+ 
+
+		cv2.waitKey(3)
