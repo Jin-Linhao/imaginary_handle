@@ -108,6 +108,7 @@ class Hand_Detection(object):
 
 
 
+
 if __name__ == '__main__':
 
 	test = Hand_Detection() 
