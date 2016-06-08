@@ -7,7 +7,7 @@ import numpy as np
 
 
 
-class Hand_Detection:
+class Hand_Detection(object):
 
 	def __init__(self):
 
