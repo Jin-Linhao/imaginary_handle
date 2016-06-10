@@ -54,32 +54,34 @@ while (cap.isOpened()) :
     contours, hierarchy = cv2.findContours(newskinmask,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     drawing = np.zeros(img.shape,np.uint8)
 
-
-
-
+    if len(contours) == 0:
+        continue
 
     max_area=0
+    print len(contours)
    
     for i in range(len(contours)):
-            cnt=contours[i]
-            area = cv2.contourArea(cnt)
-            if(area>max_area):
-                max_area=area
-                ci=i
+        print i
+        cnt=contours[i]
+        area = cv2.contourArea(cnt)
+        if(area>max_area):
+            max_area=area
+            ci=i
     cnt=contours[ci]
-    hull = cv2.convexHull(cnt)
-    moments = cv2.moments(cnt)
-    if moments['m00']!=0:
-                cx = int(moments['m10']/moments['m00']) # cx = M10/M00
-                cy = int(moments['m01']/moments['m00']) # cy = M01/M00
+    print cnt
+    # hull = cv2.convexHull(cnt)
+    # moments = cv2.moments(cnt)
+    # if moments['m00']!=0:
+    #             cx = int(moments['m10']/moments['m00']) # cx = M10/M00
+    #             cy = int(moments['m01']/moments['m00']) # cy = M01/M00
               
-    centr=(cx,cy)       
-    cv2.circle(img,centr,5,[0,0,255],2)       
-    cv2.drawContours(drawing,[cnt],0,(0,255,0),2) 
-    cv2.drawContours(drawing,[hull],0,(0,0,255),2) 
+    # centr=(cx,cy)       
+    # cv2.circle(img,centr,5,[0,0,255],2)       
+    cv2.drawContours(drawing,cnt,-1,(0,255,0),3) 
+    # cv2.drawContours(drawing,[hull],0,(0,0,255),2) 
           
-    cnt = cv2.approxPolyDP(cnt,0.01*cv2.arcLength(cnt,True),True)
-    hull = cv2.convexHull(cnt,returnPoints = False)
+    # cnt = cv2.approxPolyDP(cnt,0.01*cv2.arcLength(cnt,True),True)
+    # hull = cv2.convexHull(cnt,returnPoints = False)
     
     # if(1):
     #            defects = cv2.convexityDefects(cnt,hull)
