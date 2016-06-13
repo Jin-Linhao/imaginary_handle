@@ -32,7 +32,6 @@ class Hand_Detection(object):
 		return skinMask
 
 
-
 	def find_contours(self, skin):	
 
 		bwskin = cv2.cvtColor(skin, cv2.COLOR_BGR2GRAY)
@@ -41,7 +40,6 @@ class Hand_Detection(object):
 		contours, hierarchy = cv2.findContours(newskinmask,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
 		
 		return contours
-
 
 
 	def find_biggest_contour(self, contours):
@@ -68,16 +66,12 @@ class Hand_Detection(object):
 		return biggest_cnt
 
 
-
-
 	def draw_biggest_contour(self, cnt, img):
 
 		drawing = np.zeros(img.shape)
 		cv2.drawContours(drawing,cnt,-1,(0,255,0),3) 
 
 		return drawing
-
-
 
 
 	def find_hull(self, cnt, drawing):
@@ -87,7 +81,6 @@ class Hand_Detection(object):
 		hull = cv2.convexHull(cnt,returnPoints = False)
 
 		return drawing
-
 
 
 	def find_center(self, cnt, img):
