@@ -1,43 +1,41 @@
+#!/usr/bin/env python
 import numpy as np
-
 import wx
 import cv2
 import freenect
-
 from gui import BaseLayout
-
 from gestures import HandGestureRecognition
 
 
 
 class KinectLayout(BaseLayout):
 
- 	def _create_custom_layout(self):
+	def _create_custom_layout(self):
 		pass
 
 
- 	def _init_custom_layout(self):
-	    self.hand_gestures = HandGestureRecognition()
+	def _init_custom_layout(self):
+		self.hand_gestures = HandGestureRecognition()
 
 
- 	def _acquire_frame(self):
+	def _acquire_frame(self):
 		frame, _ = freenect.sync_get_depth()
 	   # return success if frame size is valid
-	  	if frame is not None:
-		   	return (True, frame)
-	   	else:
-		   	return (False, frame)
+		if frame is not None:
+			return (True, frame)
+		else:
+			return (False, frame)
 
 
 	def _process_frame(self, frame):
    # clip max depth to 1023, convert to 8-bit grayscale
-   		np.clip(frame, 0, 2**10 – 1, frame)
-   		frame >>= 2
-   		frame = frame.astype(np.uint8)
+		np.clip(frame, 0, 1023, frame)
+		frame >>= 2
+		frame = frame.astype(np.uint8)
 
-   		num_fingers, img_draw = self.hand_gestures.recognize(frame)
+		num_fingers, img_draw = self.hand_gestures.recognize(frame)
 
-   		height, width = frame.shape[:2]
+		height, width = frame.shape[:2]
 		cv2.circle(img_draw, (width/2, height/2), 3, [255, 102, 0], 2)
 		cv2.rectangle(img_draw, (width/3, height/3), (width*2/3, height*2/3), [255, 102, 0], 2)
 
@@ -48,44 +46,47 @@ class KinectLayout(BaseLayout):
 
 
 class HandGestureRecognition:
-  	def __init__(self):
-      	 # maximum depth deviation for a pixel to be considered            # within range
-       	self.abs_depth_dev = 14
 
-      	 # cut-off angle (deg): everything below this is a            convexity
-      	 # point that belongs to two extended fingers
-      	self.thresh_deg = 80.0
+	def __init__(self):
+		 # maximum depth deviation for a pixel to be considered            # within range
+		self.abs_depth_dev = 14
+
+		 # cut-off angle (deg): everything below this is a            convexity
+		 # point that belongs to two extended fingers
+		self.thresh_deg = 80.0
 
 
-    def recognize(self, img_gray):
-   		segment = self._segment_arm(img_gray)
+	def recognize(self, img_gray):
 
-   		[contours, defects] = self._find_hull_defects(segment)
+		segment = self._segment_arm(img_gray)
 
-   		img_draw = cv2.cvtColor(img_gray, cv2.COLOR_GRAY2RGB)
+		[contours, defects] = self._find_hull_defects(segment)
+
+		img_draw = cv2.cvtColor(img_gray, cv2.COLOR_GRAY2RGB)
 		[num_fingers, img_draw] =    self._detect_num_fingers(contours,
-      	defects, img_draw)
+		defects, img_draw)
 
-      	return (num_fingers, img_draw)
+		return (num_fingers, img_draw)
 
 
-    def _segment_arm(self, frame):
+	def _segment_arm(self, frame):
+
 		""" segments the arm region based on depth """
 		center_half = 10 # half-width of 21 is 21/2-1
-		lowerHeight = self.height/2 – center_half
+		lowerHeight = self.height/2 - center_half
 		upperHeight = self.height/2 + center_half
-		lowerWidth = self.width/2 – center_half
+		lowerWidth = self.width/2 - center_half
 		upperWidth = self.width/2 + center_half
 		center = frame[lowerHeight:upperHeight,lowerWidth:upperWidth]
 
 		med_val = np.median(center)
 
-		frame = np.where(abs(frame – med_val) <= self.abs_depth_dev,     128, 0).astype(np.uint8)
+		frame = np.where(abs(frame - med_val) <= self.abs_depth_dev, 128, 0).astype(np.uint8)
 
-       	kernel = np.ones((3, 3), np.uint8)
-       	frame = cv2.morphologyEx(frame, cv2.MORPH_CLOSE, kernel)
+		kernel = np.ones((3, 3), np.uint8)
+		frame = cv2.morphologyEx(frame, cv2.MORPH_CLOSE, kernel)
 
-       	small_kernel = 3
+		small_kernel = 3
 		frame[ self.height/2-small_kernel: self.height/2+small_kernel, 
 			   self.width/2-small_kernel: self.width/2+small_kernel    ] = 128
 		
@@ -98,58 +99,61 @@ class HandGestureRecognition:
 
 
 	def _find_hull_defects(self, segment):
-   		
-   		contours, hierarchy = cv2.findContours(segment, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-   		
-   		max_contour = max(contours, key=cv2.contourArea)
-   		
+		
+		contours, hierarchy = cv2.findContours(segment, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+		
+		max_contour = max(contours, key=cv2.contourArea)
+		
 
-   		defects = cv2.convexityDefects(max_contour, hull)
+		defects = cv2.convexityDefects(max_contour, hull)
 
-   		return (cnt,defects)
-
-
-   	def angle_rad(v1, v2):
-   		
-   		return np.arctan2(np.linalg.norm(np.cross(v1, v2)), np.dot(v1, v2))
+		return (cnt,defects)
 
 
-   	def deg2rad(angle_deg):
-   		
-   		return angle_deg/180.0*np.pi
+
+	def angle_rad(v1, v2):
+		
+		return np.arctan2(np.linalg.norm(np.cross(v1, v2)), np.dot(v1, v2))
 
 
-   	def _detect_num_fingers(self, contours, defects, img_draw):
 
-   		self.thresh_deg = 80.0
+	def deg2rad(angle_deg):
+		
+		return angle_deg/180.0*np.pi
 
-   		if defects is None:
-   			return [0, img_draw]
-   		if len(defects) <= 2:
-   			return [0, img_draw]
 
-   		num_fingers = 1
 
-   		for i in range(defects.shape[0]):
-	   	# each defect point is a 4-tuplestart_idx, end_idx,        farthest_idx, _ == defects[i, 0]
-	   	start = tuple(contours[start_idx][0])
-	   	end = tuple(contours[end_idx][0])
-	   	far = tuple(contours[farthest_idx][0])
+	def _detect_num_fingers(self, contours, defects, img_draw):
 
-	   	# draw the hull
-	   	cv2.line(img_draw, start, end [0, 255, 0], 2)
+		self.thresh_deg = 80.0
 
-	   	# if angle is below a threshold, defect point belongs
-		# to two extended fingers
-		if angle_rad(np.subtract(start, far), np.subtract(end, far)) < deg2rad(self.thresh_deg):
-		    # increment number of fingers
-		   num_fingers = num_fingers + 1
+		if defects is None:
+			return [0, img_draw]
+		if len(defects) <= 2:
+			return [0, img_draw]
 
-		   # draw point as green
-		   cv2.circle(img_draw, far, 5, [0, 255, 0], -1)
-		else:
-		   # draw point as red
-		   cv2.circle(img_draw, far, 5, [255, 0, 0], -1)
+		num_fingers = 1
+
+		for i in range(defects.shape[0]):
+		# each defect point is a 4-tuplestart_idx, end_idx,        farthest_idx, _ == defects[i, 0]
+			start = tuple(contours[start_idx][0])
+			end = tuple(contours[end_idx][0])
+			far = tuple(contours[farthest_idx][0])
+
+			# draw the hull
+			cv2.line(img_draw, start, end [0, 255, 0], 2)
+
+			# if angle is below a threshold, defect point belongs
+			# to two extended fingers
+			if angle_rad(np.subtract(start, far), np.subtract(end, far)) < deg2rad(self.thresh_deg):
+				# increment number of fingers
+			   num_fingers = num_fingers + 1
+
+			   # draw point as green
+			   cv2.circle(img_draw, far, 5, [0, 255, 0], -1)
+			else:
+			   # draw point as red
+			   cv2.circle(img_draw, far, 5, [255, 0, 0], -1)
 
 		return (min(5, num_fingers), img_draw)
 
